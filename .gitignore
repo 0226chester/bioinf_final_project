@@ -4,6 +4,13 @@
 *.txt
 *.pkl
 *.h5
+*.gz
+*.log
+*.edgelist
+*.gpickle
+*.npy
+*.fasta
+*.obo
 data/raw/*
 data/processed/*
 !data/raw/README.md
