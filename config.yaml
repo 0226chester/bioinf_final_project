@@ -1,0 +1,30 @@
+data:
+  raw_dir: "raw_data/"
+  processed_dir: "processed_data/"
+  confidence_threshold: 700
+  
+features:
+  use_go_propagation: true
+  use_ic_features: true
+  go_svd_components: 100
+  use_sequence_features: true   
+  amino_acids: ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V'] 
+  use_graph_features: true      
+  graph_features: ['degree', 'betweenness', 'closeness'] 
+  scale_features: true          
+  
+model:
+  type: "GraphSAGE"  # or "GAT"
+  hidden_dim: 128
+  embed_dim: 64
+  dropout: 0.5
+  
+training:
+  epochs: 100
+  lr: 0.005
+  patience: 10
+  val_ratio: 0.1
+  test_ratio: 0.15
+
+experiment:
+  name: "ppi_link_prediction_test"

@@ -1,0 +1,50 @@
+data:
+  confidence_threshold: 700
+  processed_dir: processed_data/
+  raw_dir: raw_data/
+experiment:
+  dir: experiments\ppi_link_prediction_test_20250528_205759
+  name: ppi_link_prediction_test
+features:
+  amino_acids:
+  - A
+  - R
+  - N
+  - D
+  - C
+  - Q
+  - E
+  - G
+  - H
+  - I
+  - L
+  - K
+  - M
+  - F
+  - P
+  - S
+  - T
+  - W
+  - Y
+  - V
+  go_svd_components: 100
+  graph_features:
+  - degree
+  - betweenness
+  - closeness
+  scale_features: true
+  use_go_propagation: true
+  use_graph_features: true
+  use_ic_features: true
+  use_sequence_features: true
+model:
+  dropout: 0.5
+  embed_dim: 64
+  hidden_dim: 128
+  type: GraphSAGE
+training:
+  epochs: 100
+  lr: 0.005
+  patience: 10
+  test_ratio: 0.15
+  val_ratio: 0.1

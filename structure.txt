@@ -1,0 +1,20 @@
+bioinf_final_project/
+├── config.yaml
+├── data/
+│   ├── __init__.py  
+│   ├── preprocess.py
+│   ├── features.py
+│   └── loader.py
+├── models/
+│   ├── __init__.py  
+│   ├── gnn.py
+│   └── train.py
+├── evaluation/
+│   ├── __init__.py  
+│   ├── metrics.py
+│   └── analysis.py
+├── visualization/
+│   ├── __init__.py  
+│   └── plots.py
+├── utils.py
+└── main.py

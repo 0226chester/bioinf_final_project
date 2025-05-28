@@ -1,0 +1,37 @@
+=== PROTEIN-PROTEIN INTERACTION LINK PREDICTION EVALUATION ===
+
+Total test edges: 31240
+Positive edges: 15620
+Negative edges: 15620
+
+--- Performance Metrics ---
+ROC AUC: 0.9813
+Average Precision: 0.9838
+Accuracy: 0.9408
+Precision: 0.9402
+Recall: 0.9415
+F1 Score: 0.9409
+
+--- Prediction Statistics ---
+Predicted positive interactions: 15642
+High-confidence novel interactions: 211
+
+--- Top Novel Protein Interaction Predictions ---
+These predictions represent potential undiscovered PPIs that could be
+prioritized for experimental validation:
+
+1. Protein 1756 ¡÷ Protein 3674 (Confidence: 0.9992)
+2. Protein 3403 ¡÷ Protein 3891 (Confidence: 0.9992)
+3. Protein 123 ¡÷ Protein 1037 (Confidence: 0.9985)
+4. Protein 1124 ¡÷ Protein 1246 (Confidence: 0.9980)
+5. Protein 3162 ¡÷ Protein 2179 (Confidence: 0.9979)
+6. Protein 1730 ¡÷ Protein 5602 (Confidence: 0.9977)
+7. Protein 4980 ¡÷ Protein 4199 (Confidence: 0.9972)
+8. Protein 712 ¡÷ Protein 5501 (Confidence: 0.9969)
+9. Protein 4748 ¡÷ Protein 2803 (Confidence: 0.9967)
+10. Protein 1065 ¡÷ Protein 2537 (Confidence: 0.9964)
+
+Biological Interpretation:
+- High-confidence predictions may represent proteins in the same complex
+- These proteins likely participate in related biological processes
+- Consider experimental validation using co-immunoprecipitation or yeast two-hybrid

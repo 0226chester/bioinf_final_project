@@ -1,7 +1,6 @@
 # Data files
 *.tsv
 *.csv
-*.txt
 *.pkl
 *.h5
 *.gz
@@ -9,18 +8,13 @@
 *.edgelist
 *.gpickle
 *.npy
-*.fasta
-*.obo
-*.gaf
-data/raw/*
-data/processed/*
-!data/raw/README.md
-!data/processed/README.md
+
+experiment/
 
 # Model checkpoints
 *.pt
 *.pth
-results/models/*
+
 
 # Python
 __pycache__/
@@ -40,6 +34,8 @@ lib64/
 parts/
 sdist/
 var/
+
+processed_data/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -62,4 +58,4 @@ var/
 .Trashes
 ehthumbs.db
 Thumbs.db
-.venv
+.venv/

@@ -1,0 +1,14 @@
+torch
+torch-geometric
+torch-scatter
+torch-sparse
+networkx
+matplotlib
+numpy
+pandas
+scikit-learn
+seaborn
+pyyaml
+goatools
+python-louvain
+tqdm
