@@ -8,6 +8,7 @@
 *.edgelist
 *.gpickle
 *.npy
+4932*
 
 experiment/
 
