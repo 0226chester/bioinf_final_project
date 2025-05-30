@@ -8,7 +8,7 @@ import pickle
 import logging # logging is configured by utils.setup_logging
 
 # Project specific imports
-from utils import load_config, setup_logging, set_seed, get_device, save_results
+from utils import load_config, setup_logging, set_seed, get_device, save_results, get_consistent_data_splits
 from data.preprocess import preprocess_ppi_data
 from data.features import FeatureEngineer
 from data.loader import load_custom_ppi_data
@@ -23,10 +23,7 @@ from evaluation.analysis import (
     generate_prediction_patterns_report
 )
 from visualization import plots as vis_plots # Renamed to avoid conflict with matplotlib.pyplot
-
-# Import RandomLinkSplit for link prediction task
 from torch_geometric.transforms import RandomLinkSplit
-
 
 def run_feature_engineering(config, logger): # 新增函數
     """Runs the feature engineering pipeline."""
@@ -88,65 +85,46 @@ def run_preprocessing(config, logger):
 
 
 def run_training(config, logger, device):
+    """Updated training with consistent splits."""
     logger.info("--- Mode: Training ---")
 
     processed_dir = config['data']['processed_dir']
     interaction_file = os.path.join(processed_dir, 'interactions_processed.csv')
-    # Feature file 現在是我們透過 FeatureEngineer 產生的 .npy 檔案
     numerical_features_file = os.path.join(processed_dir, 'node_features_matrix.npy')
-    # 我們仍然需要原始的 proteins_processed.csv 來獲取 protein_id 的順序
     proteins_info_file = os.path.join(processed_dir, 'proteins_processed.csv')
 
-
-    if not (os.path.exists(interaction_file) and \
-            os.path.exists(numerical_features_file) and \
-            os.path.exists(proteins_info_file)):
-        logger.error(f"Processed data files or numerical features not found in {processed_dir}. "
-                     "Please run preprocessing and feature engineering first.")
+    if not all(os.path.exists(f) for f in [interaction_file, numerical_features_file, proteins_info_file]):
+        logger.error(f"Required files not found in {processed_dir}")
         return
 
-    # 1. Load Data using the new approach
+    # Load data
     logger.info("Loading processed data with numerical features...")
     data = load_custom_ppi_data(
         interaction_file_path=interaction_file,
-        numerical_feature_file_path=numerical_features_file, # 傳遞 .npy 檔案路徑
-        proteins_info_file_path=proteins_info_file, # 傳遞包含 protein_id 順序的檔案
+        numerical_feature_file_path=numerical_features_file,
+        proteins_info_file_path=proteins_info_file,
         score_threshold=0
     )
 
     if data is None:
         logger.error("Failed to load data. Exiting training.")
         return
-    # logger.info(f"Data loaded: {data}")
+
     logger.info(f"Data loaded with {data.num_nodes} nodes and {data.num_edges} edges.")
-    logger.info(f"Node features shape: {data.x.shape if data.x is not None else 'None'}")
-    logger.info(f"Edge features shape: {data.edge_attr.shape if data.edge_attr is not None else 'None'}")
-    
-    # ... (後續的資料分割、模型初始化、訓練流程與之前類似) ...
-    # 確保 in_channels 是從 data.num_node_features 獲取的，loader.py 會設定好它
 
-    logger.info("Splitting data for link prediction...")
-    transform = RandomLinkSplit(
-        num_val=config['training']['val_ratio'],
-        num_test=config['training']['test_ratio'],
-        is_undirected=True,
-        add_negative_train_samples=True,
-        neg_sampling_ratio=1.0,
-        split_labels=False
-    )
-    train_data, val_data, test_data = transform(data)
+    # USE CONSISTENT SPLITTING
+    logger.info("Splitting data with consistent seed...")
+    train_data, val_data, test_data = get_consistent_data_splits(data, config, 'training')
 
-    logger.info(f"Train data shape: {train_data.num_nodes} nodes, {train_data.num_edges} edges")
-    logger.info(f"Validation data shape: {val_data.num_nodes} nodes, {val_data.num_edges} edges")
-    logger.info(f"Test data shape: {test_data.num_nodes} nodes, {test_data.num_edges} edges")
-    logger.info(f"Train data node features shape: {train_data.x.shape if train_data.x is not None else 'None'}")
-    logger.info(f"Validation data node features shape: {val_data.x.shape if val_data.x is not None else 'None'}")
-    logger.info(f"Test data node features shape: {test_data.x.shape if test_data.x is not None else 'None'}")
-    
-    # 3. Initialize Model
+    # Set different seed for model training
+    model_seed = config.get('training', {}).get('model_seed', 123)
+    torch.manual_seed(model_seed)
+    logger.info(f"Model training seed set to: {model_seed}")
+
+    # Rest of training code remains the same...
     model_config = config['model']
     in_channels = train_data.num_node_features
-    use_mlp_pred = model_config.get('predictor_type', 'mlp').lower() == 'mlp' # 從 config 讀取
+    use_mlp_pred = model_config.get('predictor_type', 'mlp').lower() == 'mlp'
 
     model = ImprovedLinkPredictionGNN(
         in_channels=in_channels,
@@ -154,13 +132,10 @@ def run_training(config, logger, device):
         embed_channels=model_config['embed_dim'],
         dropout=model_config['dropout'],
         use_gat=(model_config['type'] == 'GAT'),
-        use_mlp_predictor=use_mlp_pred # 使用設定值
+        use_mlp_predictor=use_mlp_pred
     ).to(device)
-    logger.info(f"Model initialized: {model_config['type']} with {model_config.get('predictor_type', 'mlp').upper()} predictor")
-    logger.info(model)
-
-    # ... (Optimizer, Criterion, Training loop) ...
-    # (這部分程式碼與您原本的 training 流程一致)
+    
+    logger.info(f"Model initialized with {model_config['type']} architecture")
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config['training']['lr'])
     criterion = torch.nn.BCEWithLogitsLoss()
@@ -185,73 +160,68 @@ def run_training(config, logger, device):
         lr_scheduler=lr_scheduler,
         verbose=True
     )
-    # ... (儲存模型和歷史記錄，繪製圖表) ...
+    
+    # Save model and history
     exp_dir = config['experiment']['dir']
+    os.makedirs(os.path.join(exp_dir, "models"), exist_ok=True)
+    
     model_save_path = os.path.join(exp_dir, "models", "best_model.pt")
     torch.save(best_model.state_dict(), model_save_path)
     logger.info(f"Best model saved to {model_save_path}")
 
+    # Save training history
     history_save_path = os.path.join(exp_dir, "training_history.json")
-    # 修正：save_results 應將 history 內容儲存到檔案，而不是 config
-    results_to_save = {'training_history': history, 'config_summary': config} # 可以包含更多資訊
+    import json
     with open(history_save_path, 'w') as f:
-        # json.dump(history, f, indent=2) # 直接儲存 history 字典
-        # 或者使用您已有的 save_results，但確保它能正確處理 history 字典
-        # 為了簡單，這裡直接 dump history
-        import json # 確保 json 已 import
         json.dump(history, f, default=lambda o: '<not serializable>', indent=2)
-
     logger.info(f"Training history saved to {history_save_path}")
 
+    # Plot training history
+    os.makedirs(os.path.join(exp_dir, "plots"), exist_ok=True)
     plot_save_path = os.path.join(exp_dir, "plots", "training_history.png")
     vis_plots.plot_training_history(history, filepath=plot_save_path)
     logger.info(f"Training history plot saved to {plot_save_path}")
 
 
-def run_evaluation(config, logger, device): # 這是您現有的函數簽名
+def run_evaluation(config, logger, device):
+    """Updated evaluation with consistent splits."""
     logger.info("--- Mode: Evaluation ---")
     exp_dir = config['experiment']['dir']
     model_config = config['model']
     processed_dir = config['data']['processed_dir']
 
-    # 1. Load Data (Test Set) using the new approach
+    # Load data using same approach as training
     logger.info("Loading and splitting data for evaluation...")
     interaction_file = os.path.join(processed_dir, 'interactions_processed.csv')
-    # 更新檔案路徑以匹配新的特徵工程輸出
     numerical_features_file = os.path.join(processed_dir, 'node_features_matrix.npy')
     proteins_info_file = os.path.join(processed_dir, 'proteins_processed.csv')
 
     data = load_custom_ppi_data(
         interaction_file_path=interaction_file,
-        numerical_feature_file_path=numerical_features_file, # 更新
-        proteins_info_file_path=proteins_info_file,         # 更新
-        score_threshold=0 # 假設評估時不需要閾值，或從config讀取
+        numerical_feature_file_path=numerical_features_file,
+        proteins_info_file_path=proteins_info_file,
+        score_threshold=0
     )
     if data is None:
         logger.error("Failed to load data for evaluation.")
         return
 
-    transform = RandomLinkSplit(
-        num_val=config['training']['val_ratio'],
-        num_test=config['training']['test_ratio'],
-        is_undirected=True,
-        add_negative_train_samples=True,
-        neg_sampling_ratio=1.0,
-        split_labels=False
-    )
-    _, _, test_data = transform(data) # We only need test_data for evaluation
+    # USE SAME CONSISTENT SPLITTING - this will give same splits as training!
+    _, _, test_data = get_consistent_data_splits(data, config, 'evaluation')
     
     logger.info(f"Test data loaded with {test_data.num_nodes} nodes and {test_data.num_edges} edges.")
-    logger.info(f"Test data node features shape: {test_data.x.shape if test_data.x is not None else 'None'}")
-    
 
-    # 2. Load Model
+    # Load model
     in_channels = test_data.num_node_features
+    use_mlp_pred = model_config.get('predictor_type', 'mlp').lower() == 'mlp'
+    
     model = ImprovedLinkPredictionGNN(
         in_channels=in_channels,
         hidden_channels=model_config['hidden_dim'],
         embed_channels=model_config['embed_dim'],
-        use_gat=(model_config['type'] == 'GAT')
+        dropout=model_config['dropout'],
+        use_gat=(model_config['type'] == 'GAT'),
+        use_mlp_predictor=use_mlp_pred
     ).to(device)
 
     model_path = os.path.join(exp_dir, "models", "best_model.pt")
@@ -262,11 +232,13 @@ def run_evaluation(config, logger, device): # 這是您現有的函數簽名
     model.eval()
     logger.info(f"Trained model loaded from {model_path}")
 
-    # 3. Evaluate Model Metrics
-    logger.info("Evaluating model performance...")
-    # The evaluate_model expects a list of graphs
+    # Now evaluation uses the SAME test set as training!
+    logger.info("Evaluating model performance on consistent test set...")
+    
+    # Rest of evaluation code remains the same...
     metrics = evaluate_model(model, [test_data], device, threshold=0.5)
     logger.info(f"Evaluation Metrics: {metrics}")
+
 
     report_save_path = os.path.join(exp_dir, "evaluation_report.txt")
     novel_preds_threshold = config.get('evaluation', {}).get('novel_pred_threshold', 0.9)
@@ -368,9 +340,12 @@ def main():
     args = parser.parse_args()
     config_data = load_config(args.config)
     if args.seed is not None:
-        # 假設種子儲存在頂層或 training 部分
         if 'training' in config_data and isinstance(config_data['training'], dict):
-            config_data['training']['seed'] = args.seed
+            # Fix: Set all the seed types that your functions actually use
+            config_data['training']['data_split_seed'] = args.seed  # ✅ This is what get_consistent_data_splits uses
+            config_data['training']['model_seed'] = args.seed
+            config_data['training']['feature_seed'] = args.seed
+            config_data['training']['seed'] = args.seed  # Keep for compatibility
         else:
             config_data['seed'] = args.seed
 
@@ -380,7 +355,7 @@ def main():
     logger.info(f"Running in mode: {args.mode}")
     logger.info(f"Experiment directory: {config_data['experiment']['dir']}")
 
-    seed_value = config_data.get('training', {}).get('seed', config_data.get('seed', 42))
+    seed_value = config_data.get('training', {}).get('data_split_seed', 42)  # ✅ Use data_split_seed consistently
     set_seed(seed_value)
     logger.info(f"Random seed set to: {seed_value}")
 

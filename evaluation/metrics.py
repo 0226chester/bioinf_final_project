@@ -176,11 +176,12 @@ def generate_evaluation_report(metrics, novel_predictions=None, filepath=None):
             "--- Top Novel Protein Interaction Predictions ---",
             "These predictions represent potential undiscovered PPIs that could be",
             "prioritized for experimental validation:",
+            "0-based indexing is used for protein IDs.",
             ""
         ])
         
         for i, pred in enumerate(novel_predictions[:10], 1):  # Show top 10
-            report.append(f"{i}. Protein {pred['source_node']} → Protein {pred['target_node']} "
+            report.append(f"{i}. Protein {pred['source_node']} → Protein {pred['target_node']} " # 0-based
                           f"(Confidence: {pred['confidence']:.4f})")
         
         report.extend([

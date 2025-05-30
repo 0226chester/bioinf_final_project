@@ -76,7 +76,7 @@ def visualize_graph(data, node_colors=None, node_size_attr=None, node_idx_to_nam
     if save_path:
         plt.savefig(save_path, bbox_inches='tight')
         logging.info(f"Graph visualization saved to {save_path}")
-    plt.show()
+    # plt.show()
 
 
 def visualize_embeddings(model, data, device, perplexity=30, color_by=None, cmap_name='viridis',
@@ -134,7 +134,7 @@ def visualize_embeddings(model, data, device, perplexity=30, color_by=None, cmap
     if save_path:
         plt.savefig(save_path, bbox_inches='tight')
         logging.info(f"Embeddings visualization saved to {save_path}")
-    plt.show()
+    # plt.show()
 
 
 def visualize_predicted_links(model, data, device, threshold=0.7, node_idx_to_name=None,
@@ -224,7 +224,7 @@ def visualize_predicted_links(model, data, device, threshold=0.7, node_idx_to_na
     if save_path:
         plt.savefig(save_path, bbox_inches='tight')
         logging.info(f"Predicted links visualization saved to {save_path}")
-    plt.show()
+    # plt.show()
 
 
 def visualize_degree_distribution(data, title="Node Degree Distribution in PPI Network", save_path=None):
@@ -264,7 +264,7 @@ def visualize_degree_distribution(data, title="Node Degree Distribution in PPI N
     if save_path:
         plt.savefig(save_path, bbox_inches='tight')
         logging.info(f"Degree distribution plot saved to {save_path}")
-    plt.show()
+    # plt.show()
 
 
 def plot_training_history(history, filepath=None):
@@ -342,7 +342,7 @@ def plot_training_history(history, filepath=None):
         except Exception as e:
             print(f"Error saving plot: {e}")
     
-    plt.show()
+    # plt.show()
 
 
 def plot_precision_recall_curve(model, test_graphs, device, filepath=None):
@@ -408,7 +408,7 @@ def plot_precision_recall_curve(model, test_graphs, device, filepath=None):
     
     if filepath:
         plt.savefig(filepath)
-    plt.show()
+    # plt.show()
 
 
 def visualize_functional_modules(data, node_embeddings, save_path=None, clustering_method='kmeans', 
@@ -495,7 +495,7 @@ def visualize_functional_modules(data, node_embeddings, save_path=None, clusteri
     if save_path:
         plt.savefig(save_path, bbox_inches='tight')
         logging.info(f"Functional modules visualization saved to {save_path}")
-    plt.show()
+    # plt.show()
     return modules_dict # This function is for visualization, returning dict is optional
 
 
@@ -545,4 +545,4 @@ def plot_prediction_pattern_statistics(results, save_path=None):
     if save_path:
         plt.savefig(save_path, bbox_inches='tight')
         logging.info(f"Prediction pattern plot saved to {save_path}")
-    plt.show()
+    # plt.show()

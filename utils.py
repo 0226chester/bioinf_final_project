@@ -15,6 +15,8 @@ import logging
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 import hashlib
+from torch_geometric import seed_everything
+from torch_geometric.transforms import RandomLinkSplit
 
 
 def load_config(config_path: str = "config.yaml") -> Dict[str, Any]:
@@ -163,6 +165,7 @@ def set_seed(seed: int):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+    seed_everything(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
@@ -251,3 +254,44 @@ def calculate_class_weights(labels: torch.Tensor) -> torch.Tensor:
     weights[labels == 0] = neg_weight
     
     return weights
+
+def get_consistent_data_splits(data, config, mode='training'):
+    """
+    Get consistent data splits using PyG seed_everything.
+    
+    Args:
+        data: PyG Data object
+        config: Configuration dictionary
+        mode: 'training' or 'evaluation' (for logging)
+    """
+    split_seed = config.get('training', {}).get('data_split_seed', 42)
+    
+    # Save current random state
+    current_rng_state = torch.get_rng_state()
+    if torch.cuda.is_available():
+        current_cuda_rng_state = torch.cuda.get_rng_state()
+    
+    # Set consistent seed for splitting
+    seed_everything(split_seed)
+    
+    # Create transform and split data
+    transform = RandomLinkSplit(
+        num_val=config['training']['val_ratio'],
+        num_test=config['training']['test_ratio'],
+        is_undirected=True,
+        add_negative_train_samples=True,
+        neg_sampling_ratio=1.0,
+        split_labels=False
+    )
+    
+    train_data, val_data, test_data = transform(data)
+    
+    # Restore previous random state for other operations
+    torch.set_rng_state(current_rng_state)
+    if torch.cuda.is_available():
+        torch.cuda.set_rng_state(current_cuda_rng_state)
+    
+    logging.info(f"Data split for {mode} - Train: {train_data.edge_label_index.shape[1]}, "
+                f"Val: {val_data.edge_label_index.shape[1]}, Test: {test_data.edge_label_index.shape[1]}")
+    
+    return train_data, val_data, test_data

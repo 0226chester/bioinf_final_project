@@ -356,7 +356,7 @@ def visualize_functional_modules(data, node_embeddings, save_path=None, clusteri
         plt.savefig(save_path, bbox_inches='tight')
         logging.info(f"Functional modules visualization saved to {save_path}")
     
-    plt.show()
+    # plt.show()
     return modules_dict
 
 

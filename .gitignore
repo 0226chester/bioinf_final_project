@@ -8,9 +8,9 @@
 *.edgelist
 *.gpickle
 *.npy
-4932*
+**/4932.*
 
-experiment/
+experiments/
 
 # Model checkpoints
 *.pt
