@@ -9,8 +9,11 @@
 *.gpickle
 *.npy
 **/4932.*
+*.png
 
 experiments/
+processed_data/*
+!processed_data/.gitkeep
 
 # Model checkpoints
 *.pt
@@ -35,8 +38,6 @@ lib64/
 parts/
 sdist/
 var/
-
-processed_data/
 *.egg-info/
 .installed.cfg
 *.egg

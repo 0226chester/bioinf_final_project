@@ -27,35 +27,22 @@ training:
   val_ratio: 0.1
   test_ratio: 0.15
   lr_scheduler: false 
-  
-  # NEW: Separate seeds for different operations to ensure reproducibility
-  data_split_seed: 42      # Seed for data splitting (CRITICAL for consistent train/val/test)
-  model_seed: 123          # Seed for model initialization and training
-  feature_seed: 456        # Seed for feature engineering (SVD, scaling, etc.)
+  data_split_seed: 42      
 
-# NEW: Evaluation configuration section
 evaluation:
   run_advanced_analysis: true
-  novel_pred_threshold: 0.9      # Threshold for novel link predictions
-  novel_pred_top_k: 20          # Number of top predictions to report
+  novel_pred_threshold: 0.9      
+  novel_pred_top_k: 20          
   
-  # Functional module analysis settings
   module_analysis:
-    method: 'kmeans'            # 'kmeans' or 'dbscan'
-    k_range_max: 10             # Maximum k for k-means search
-    dbscan_eps: 0.5             # DBSCAN epsilon (if using DBSCAN)
-    dbscan_min_samples: 5       # DBSCAN min samples (if using DBSCAN)
+    method: 'kmeans'       # 'kmeans' or 'dbscan'
+    k_range_max: 10             
+    dbscan_eps: 0.5             
+    dbscan_min_samples: 5       
   
-  # Prediction pattern analysis
   prediction_pattern_analysis:
-    degree_percentile: 50       # Percentile to separate high/low degree nodes
+    degree_percentile: 50       
 
 experiment:
   name: "ppi_link_prediction_test"
-  dir: "experiments/ppi_link_prediction_test"  # NEW: Explicit experiment directory
-
-# NEW: Logging configuration (optional but recommended)
-logging:
-  level: "INFO"                 # DEBUG, INFO, WARNING, ERROR
-  save_logs: true              # Save logs to file
-  log_file: "experiment.log"   # Log file name (will be in experiment dir)
+  dir: "experiments/ppi_link_prediction_test"  

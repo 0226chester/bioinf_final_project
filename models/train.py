@@ -35,13 +35,7 @@ def train(model, graphs, optimizer, criterion, device):
             continue
         # Ensure edge_index exists for message passing
         if data.edge_index is None or data.edge_index.numel() == 0:
-            # Depending on the model, this might be acceptable if it can handle graphs with no edges,
-            # or it might be an issue. For GNNs, it's usually expected.
-            # If the model requires edges, this graph should probably be skipped or handled.
-            # For now, let's assume the model can process it or it's an edge case.
-            # If this causes issues downstream (e.g., in model forward pass), add a continue.
-            pass # Or print a warning, or continue
-
+            pass 
         optimizer.zero_grad()
         logits = model(data) # model expects data.x, data.edge_index, and for link prediction, data.edge_label_index
         
@@ -57,8 +51,7 @@ def train(model, graphs, optimizer, criterion, device):
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         
         optimizer.step()
-        # Corrected: loss.item() is the loss for the current single graph.
-        # data.num_graphs is not an attribute of a single Data object.
+     
         total_loss += loss.item()
         
     return total_loss / len(graphs) if graphs else 0
@@ -113,10 +106,6 @@ def test(model, graphs, device):
     # Ensure there are both positive and negative samples for metric calculation
     if len(torch.unique(final_labels)) < 2:
         print(f"Warning: Only one class present in labels after processing all graphs. ROC AUC / AP score is not well-defined. Labels: {torch.unique(final_labels)}")
-        # Depending on the case, you might return 0.0 or handle it differently.
-        # For example, if all are positive and all predictions are high, AP might be 1.0.
-        # However, roc_auc_score will raise an error.
-        # For simplicity, returning 0.0 if metrics can't be computed robustly.
         return 0.0, 0.0
     
     # Check for NaN or Inf in predictions, which can happen with empty inputs or numerical issues
