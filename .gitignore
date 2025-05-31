@@ -10,10 +10,14 @@
 *.npy
 **/4932.*
 *.png
+*.fasta
+*.gaf
 
 experiments/
 processed_data/*
 !processed_data/.gitkeep
+raw_data/*
+!raw_data/.gitkeep
 
 # Model checkpoints
 *.pt
