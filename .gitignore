@@ -13,7 +13,9 @@
 *.fasta
 *.gaf
 
-experiments/
+
+experiments/*
+!experiments/.gitkeep
 processed_data/*
 !processed_data/.gitkeep
 raw_data/*
